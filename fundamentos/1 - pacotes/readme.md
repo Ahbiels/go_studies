@@ -1,5 +1,5 @@
 ```sh
 go mod init module
-git build
+go build
 ./module
 ```
