@@ -29,4 +29,16 @@ func main () {
 
 	fmt.Println(slice3)
 
+	fmt.Printf("\n----------------------------------------------------\n\n")
+
+
+	slice4 := make([]float32, 10, 12)
+
+	slice4 = append(slice4, 10)
+	slice4 = append(slice4, 10)
+	slice4 = append(slice4, 10)
+
+	fmt.Println(len(slice4))
+	fmt.Println(cap(slice4))
+
 }
