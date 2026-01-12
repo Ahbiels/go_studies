@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"module/maps"
 )
 
 var name string = "Angelo"
@@ -38,7 +37,6 @@ func main(){
 		"area": "Data",
 	}
 	fmt.Printf("\n%v\n",user2)
-	maps.Study()
 
 	
 
