@@ -30,16 +30,33 @@ type circulo struct {
 	raio float64
 }
 
+type ValorAleatorio struct {
+	valor string
+}
+
+func (v ValorAleatorio) mostrarValor() string {
+	return v.valor
+}
+
+func test(interf interface {
+	mostrarValor() string
+}) {
+	fmt.Println(interf.mostrarValor())
+}
+
 func main() {
 	fmt.Println("Interfaces permites flexibilidade com tipos de dados")
 	fmt.Println("Interfaces só possuem assinaturas de métodos")
 
-	r := retangulo{10,15}
+	r := retangulo{10, 15}
 	result := r.area()
 	escreverArea(r)
 	c := circulo{15}.area()
 	// escreverArea(c)
 	fmt.Println(result)
 	fmt.Println(c)
+
+	v:= ValorAleatorio{"Hello, World!"}
+	test(v)
 
 }
