@@ -1,0 +1,12 @@
+{
+  "id": 12345,
+  "produto": "Notebook Gamer",
+  "preco": 4500.50,
+  "disponivel": true,
+  "especificacoes": {
+    "processador": "Intel i7",
+    "ram": 16,
+    "armazenamento": "512GB SSD"
+  },
+  "tags": ["gamer", "notebook", "alta performance"]
+}

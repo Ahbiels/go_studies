@@ -1,0 +1,14 @@
+{
+    "name": "Cloud SQL",
+    "sku": "SUE-WID-AKDS",
+    "project": [
+        "project001",
+        "project002",
+        "project003"
+    ],
+    "prices": {
+        "TotalCost": 178.65,
+        "Credits": 23.65,
+        "UsageCost": 155
+    }
+}
