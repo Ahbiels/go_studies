@@ -13,7 +13,7 @@ type Users struct {
 	Name       string `json:"name"`
 	Email      string `json:"email"`
 	Active     bool   `json:"active"`
-	Created_at string `json:"created_at"`
+	Created_at string `json:"-"`
 }
 
 func main() {
