@@ -156,3 +156,36 @@ func main() {
 }
 ```
 
+### Encoder e Decoder
+Estas ferramentas operam com streams (io.Reader e io.Writer). Elas leem ou escrevem os dados conforme eles vão chegando ou saindo, sem precisar carregar tudo na memória de uma vez.
+
+- **json.NewEncoder**: Escreve JSON diretamente em um io.Writer (como um arquivo, uma resposta HTTP ou o terminal).
+- **json.NewDecoder**: Lê JSON diretamente de um io.Reader (como o corpo de uma requisição HTTP ou um arquivo aberto).
+
+A vantagem: Se você receber um JSON gigante via HTTP, o Decoder vai lendo e processando pedaço por pedaço. Isso economiza muita memória e geralmente é mais rápido para payloads grandes.
+
+**Quando usar:**
+- Em handlers de servidores web (lendo r.Body ou escrevendo em w).
+- Lendo/Escrevendo arquivos grandes.
+- Comunicação via sockets de rede.
+
+```go
+// Exemplo: Manipulando JSON em um servidor HTTP
+func meuHandler(w http.ResponseWriter, r *http.Request) {
+    var p Pessoa
+    
+    // DECODER: Lê direto do fluxo da requisição (r.Body)
+    // Não carregamos o JSON inteiro na RAM, lemos o stream.
+    if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    p.Idade += 1 // Fazemos alguma alteração
+
+    // ENCODER: Escreve direto no fluxo de resposta (w)
+    // Não criamos uma variável temporária gigante de bytes.
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(p)
+}
+```
