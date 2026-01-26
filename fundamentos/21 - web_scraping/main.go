@@ -16,6 +16,7 @@ type Book struct {
 	Thumbnail       string  `json:"thumbnail"`
 	Rating          uint8   `json:"rating"`
 	BookName        string  `json:"book_name"`
+	BookCategory    string  `json:"book_category"`
 	BookPrice       float32 `json:"book_price"`
 	Currency        string  `json:"currency"`
 	BookAvailable   bool    `json:"book_available"`
@@ -29,28 +30,55 @@ func main() {
 	start := time.Now()
 	c := colly.NewCollector(
 		colly.AllowedDomains("books.toscrape.com"),
-		colly.MaxDepth(2),
+		colly.MaxDepth(3),
 		colly.Async(true),
 	)
 	c.Limit(&colly.LimitRule{DomainGlob: "*", Parallelism: 30})
-	
+
+	categoryCollector := c.Clone()
+	categoryCollector.Limit(&colly.LimitRule{DomainGlob: "*", Parallelism: 20})
+
 	detailCollector := c.Clone()
-	detailCollector.Limit(&colly.LimitRule{DomainGlob: "*", Parallelism: 2})
+	detailCollector.Limit(&colly.LimitRule{DomainGlob: "*", Parallelism: 20})
+
 	var books []Book
 
-	c.OnHTML("article[class=product_pod]", func(h *colly.HTMLElement) {
-		url := h.Request.AbsoluteURL(h.ChildAttr("h3 a", "href"))
+	c.OnHTML("div.side_categories ul li", func(h *colly.HTMLElement) {
+		var category string
+
+		url := h.Request.AbsoluteURL(h.ChildAttr("li a", "href"))
 		if strings.Contains(url, "books.toscrape.com/catalogue") {
-			detailCollector.Visit(url)
+			h.ForEach("li a", func(_ int, e *colly.HTMLElement) {
+				category = strings.TrimSpace(e.Text)
+				ctx := colly.NewContext()
+				ctx.Put("category", category)
+
+				// Compartilhar dados entre OnHTML
+				categoryCollector.Request("GET", url, nil, ctx, nil)
+			})
+		}
+
+	})
+
+	categoryCollector.OnHTML("article[class=product_pod]", func(h *colly.HTMLElement) {
+		url := h.Request.AbsoluteURL(h.ChildAttr("h3 a", "href"))
+		category := h.Request.Ctx.Get("category")
+		if strings.Contains(url, "books.toscrape.com/catalogue") {
+			ctx := colly.NewContext()
+			ctx.Put("category", category)
+			// detailCollector.Visit(url)
+			detailCollector.Request("GET", url, nil, ctx, nil)
 		}
 	})
 	detailCollector.OnHTML("article.product_page", func(h *colly.HTMLElement) {
+		category := h.Request.Ctx.Get("category")
 		available, quantity := book_is_available(h.ChildText("div.col-sm-6 p.instock"))
 		currency, price := price_clean(h.ChildText("div.col-sm-6 p.price_color"))
 		book := Book{
 			Thumbnail:       site_url + h.ChildAttr("div.image_container img", "src"),
 			Rating:          rating_to_uint(strings.Split(h.ChildAttr("p.star-rating", "class"), " ")[1]),
 			BookName:        h.ChildAttr("h3 a", "title"),
+			BookCategory:    category,
 			Currency:        currency,
 			BookPrice:       price,
 			BookAvailable:   available,
@@ -61,24 +89,27 @@ func main() {
 		books = append(books, book)
 	})
 
-	// c.OnHTML("li.next a", func(h *colly.HTMLElement) {
-	// 	next_page := h.Request.AbsoluteURL(h.Attr("href"))
-	// 	c.Visit(next_page)
-	// })
+	categoryCollector.OnHTML("li.next a", func(h *colly.HTMLElement) {
+		next_page := h.Request.AbsoluteURL(h.Attr("href"))
+		categoryCollector.Visit(next_page)
+	})
 
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println(r.URL.String())
 	})
 	c.Visit(site_url)
 	c.Wait()
+	categoryCollector.Wait()
 	detailCollector.Wait()
+
+	fmt.Println(len(books))
 	encoder, err := json.Marshal(books)
 	if err != nil {
 		log.Fatal(err)
 	}
 	os.WriteFile("books.json", encoder, 0644)
 	end := time.Since(start)
-	fmt.Printf("\n O programa levou cerca de %v para ser executado", end)
+	fmt.Printf("\n O programa levou cerca de %v para ser executado\n", end)
 }
 
 func rating_to_uint(rating_str string) (rating uint8) {
